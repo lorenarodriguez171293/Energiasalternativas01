@@ -1,139 +1,38 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Simulador de Energía Eólica - Argentina</title>
+<!-- ==========================================================
+     MODELOS DE AEROGENERADORES
+     ========================================================== -->
 
-<style>
-body {
-  font-family: Arial, sans-serif;
-  background: #e8f7ff;
-  margin: 0;
-  padding: 0;
-}
+<h2>🔧 Selección de Modelo de Aerogenerador</h2>
 
-/* Encabezado */
-header {
-  background: #0b6fa4;
-  color: white;
-  text-align: center;
-  padding: 20px;
-}
+<div class="card">
 
-/* Contenedor general */
-.container {
-  padding: 20px;
-}
+  <h3>Elegí el modelo:</h3>
 
-/* Mapa */
-.map {
-  max-width: 500px;
-  margin: auto;
-}
+  <label><input type="radio" name="modelo" id="m1" checked> Vestas V100 – 2 MW</label><br>
+  <label><input type="radio" name="modelo" id="m2"> Nordex N149 – 4.5 MW</label><br>
+  <label><input type="radio" name="modelo" id="m3"> GE 3.8-130 – 3.8 MW</label>
 
-/* Marcadores en el mapa */
-.marker {
-  fill: red;
-  stroke: white;
-  stroke-width: 1;
-}
+</div>
 
-/* Sección turbina */
-.turbine-block {
-  text-align: center;
-  margin-top: 40px;
-}
+<!-- ==========================================================
+     SIMULADOR DE VELOCIDAD + MODELO (SIN JAVASCRIPT)
+     ========================================================== -->
 
-/* Turbina */
-.turbine {
-  width: 180px;
-  margin: auto;
-}
+<div class="card">
 
-.blade {
-  transform-origin: 50% 50%;
-  animation: spin 3s linear infinite;
-}
+  <h3>🌬 Seleccioná la velocidad del viento:</h3>
 
-@keyframes spin {
-  100% { transform: rotate(360deg); }
-}
+  <label><input type="radio" name="velocidad" id="v1" checked> Bajo (10 km/h)</label><br>
+  <label><input type="radio" name="velocidad" id="v2"> Medio (30 km/h)</label><br>
+  <label><input type="radio" name="velocidad" id="v3"> Alto (60 km/h)</label>
 
-/* Tarjetas de información */
-.card {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  margin: 20px auto;
-  max-width: 600px;
-  box-shadow: 0 0 10px #0003;
-}
-</style>
-</head>
+  <br><br>
 
-<body>
-
-<header>
-  <h1>Simulador de Energía Eólica - Argentina</h1>
-  <p>Funcionamiento y principales parques eólicos del país</p>
-</header>
-
-<div class="container">
-
-  <!-- MAPA SVG DE ARGENTINA CON MARCADORES -->
-  <h2>🗺️ Mapa de Parques Eólicos en Argentina</h2>
-  <p>Marcadores rojos = zonas con alta generación eólica</p>
-
-  <div class="map">
-    <svg viewBox="0 0 400 800">
-      <!-- Contorno simplificado de Argentina -->
-      <path d="M200 20 L220 80 L210 150 L230 220 L220 300 L240 380 
-               L230 460 L250 540 L240 620 L220 700 L210 780"
-            fill="#cfe7ff" stroke="#084d72" stroke-width="3"/>
-
-      <!-- Marcadores de parques eólicos -->
-      <!-- Patagonia -->
-      <circle cx="230" cy="520" r="8" class="marker"/>
-      <text x="240" y="525" font-size="16">Rawson</text>
-
-      <circle cx="225" cy="560" r="8" class="marker"/>
-      <text x="235" y="565" font-size="16">Madryn</text>
-
-      <circle cx="220" cy="600" r="8" class="marker"/>
-      <text x="230" y="605" font-size="16">Chubut Norte</text>
-
-      <!-- Buenos Aires -->
-      <circle cx="210" cy="350" r="8" class="marker"/>
-      <text x="220" y="355" font-size="16">Villarino</text>
-
-      <circle cx="205" cy="320" r="8" class="marker"/>
-      <text x="215" y="325" font-size="16">Bahía Blanca</text>
-    </svg>
-  </div>
-
-
-  <!-- INFO -->
-  <div class="card">
-    <h3>📌 Datos actuales (2024–2025)</h3>
-    <ul>
-      <li>Argentina supera los <b>4.000 MW</b> instalados en energía eólica.</li>
-      <li>El 80% de la generación está en **Patagonia**.</li>
-      <li>Los parques más grandes están en Chubut, Santa Cruz y Buenos Aires.</li>
-      <li>Es la segunda fuente renovable del país (después de la hidráulica).</li>
-    </ul>
-  </div>
-
-  <!-- TURBINA -->
-  <h2>💨 ¿Cómo funciona una turbina eólica?</h2>
-
+  <!-- Turbina animada -->
   <div class="turbine-block">
-    <svg class="turbine" viewBox="0 0 200 200">
-      <!-- Torre -->
+    <svg class="turbine sim-turbine" viewBox="0 0 200 200">
       <rect x="95" y="80" width="10" height="100" fill="#888" />
-
-      <!-- Rotor -->
-      <g class="blade">
-        <!-- Aspas -->
+      <g class="blade blade-sim">
         <polygon points="100,20 110,80 90,80" fill="#cfcfcf"/>
         <polygon points="150,100 110,90 110,110" fill="#cfcfcf"/>
         <polygon points="100,180 110,120 90,120" fill="#cfcfcf"/>
@@ -142,14 +41,66 @@ header {
     </svg>
   </div>
 
-  <div class="card">
-    <h3>🌬️ Explicación</h3>
-    <p>
-      El viento mueve las aspas → el rotor gira → el generador convierte ese giro en electricidad.<br>
-      Cuanto mayor es la velocidad del viento, mayor es la energía producida.
-    </p>
+  <h3>🔋 Energía generada:</h3>
+
+  <div class="energia-modelo">
+
+    <!-- Vestas V100 (2 MW) -->
+    <span class="m1v1">≈ 0,4 MW</span>
+    <span class="m1v2">≈ 1,4 MW</span>
+    <span class="m1v3">≈ 2,0 MW</span>
+
+    <!-- Nordex N149 (4,5 MW) -->
+    <span class="m2v1">≈ 0,8 MW</span>
+    <span class="m2v2">≈ 2,8 MW</span>
+    <span class="m2v3">≈ 4,5 MW</span>
+
+    <!-- GE 3.8-130 (3.8 MW) -->
+    <span class="m3v1">≈ 0,7 MW</span>
+    <span class="m3v2">≈ 2,3 MW</span>
+    <span class="m3v3">≈ 3,8 MW</span>
+
   </div>
 
 </div>
-</body>
-</html>
+
+
+<style>
+
+/* Ocultar todos los valores */
+.energia-modelo span { 
+  display: none; 
+  font-size: 24px; 
+  font-weight: bold; 
+}
+
+/* Combinaciones modelo + viento */
+
+/* --- VESTAS V100 --- */
+#m1:checked ~ .card ~ .card .energia-modelo .m1v1 { display:inline; }
+#m1:checked ~ .card ~ .card #v1:checked ~ .turbine-block + h3 + .energia-modelo .m1v1 { display:inline; }
+
+#m1:checked ~ .card ~ .card .energia-modelo .m1v2 { display:none; }
+#v2:checked ~ .turbine-block + h3 + .energia-modelo .m1v2 { display:inline; }
+
+#m1:checked ~ .card ~ .card .energia-modelo .m1v3 { display:none; }
+#v3:checked ~ .turbine-block + h3 + .energia-modelo .m1v3 { display:inline; }
+
+/* --- NORDEX N149 --- */
+#m2:checked ~ .card ~ .card #v1:checked ~ .turbine-block + h3 + .energia-modelo .m2v1 { display:inline; }
+#m2:checked ~ .card ~ .card #v2:checked ~ .turbine-block + h3 + .energia-modelo .m2v2 { display:inline; }
+#m2:checked ~ .card ~ .card #v3:checked ~ .turbine-block + h3 + .energia-modelo .m2v3 { display:inline; }
+
+/* --- GE 3.8-130 --- */
+#m3:checked ~ .card ~ .card #v1:checked ~ .turbine-block + h3 + .energia-modelo .m3v1 { display:inline; }
+#m3:checked ~ .card ~ .card #v2:checked ~ .turbine-block + h3 + .energia-modelo .m3v2 { display:inline; }
+#m3:checked ~ .card ~ .card #v3:checked ~ .turbine-block + h3 + .energia-modelo .m3v3 { display:inline; }
+
+/* Turbina velocidad */
+.blade-sim { animation: spin 6s linear infinite; }
+
+#v1:checked ~ .turbine-block .blade-sim { animation-duration: 6s; }
+#v2:checked ~ .turbine-block .blade-sim { animation-duration: 3s; }
+#v3:checked ~ .turbine-block .blade-sim { animation-duration: 1.5s; }
+
+</style>
