@@ -1,1 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Mapa energético — Argentina</title>
+  <meta name="viewport" content="initial-scale=1.0, width=device-width" />
+  <style>
+    body, html { height: 100%; margin: 0; font-family: Arial, sans-serif; background:#f6f8fb; }
+    #map { height: 90vh; width: 100%; }
+    #controls {
+      padding: 10px;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 5;
+      border-radius: 8px;
+      max-width: 320px;
+    }
+    #controls h3 { margin: 0 0 6px 0; font-size: 16px; }
+    .layer-row { margin: 6px 0; display:flex; align-items:center; gap:8px; }
+    .legend { font-size: 13px; margin-top:8px; }
+    .legend span { display:inline-block; width:12px; height:12px; margin-right:6px; vertical-align:middle; }
+    button { background:#1976d2;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer; }
+    button:active{transform:translateY(1px)}
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <h3>Capas energéticas</h3>
+    <div class="layer-row"><input id="chkHydro" type="checkbox" checked /> <label for="chkHydro">Hidroeléctrica</label></div>
+    <div class="layer-row"><input id="chkSolar" type="checkbox" checked /> <label for="chkSolar">Fotovoltaica</label></div>
+    <div class="layer-row"><input id="chkWind" type="checkbox" checked /> <label for="chkWind">Eólica</label></div>
+    <div class="layer-row"><input id="chkNuclear" type="checkbox" checked /> <label for="chkNuclear">Nuclear</label></div>
+    <div class="layer-row"><input id="chkBiomass" type="checkbox" checked /> <label for="chkBiomass">Biomasa / Biogás</label></div>
+    <div style="margin-top:8px;">
+      <button id="fitBtn">Ajustar vista a Argentina</button>
+      <button id="exportBtn">Exportar GeoJSON (capas visibles)</button>
+    </div>
+    <div class="legend">
+      <div><span style="background:#1e88e5"></span> Hidro</div>
+      <div><span style="background:#fbc02d"></span> Solar</div>
+      <div><span style="background:#66bb6a"></span> Eólica</div>
+      <div><span style="background:#ef5350"></span> Nuclear</div>
+      <div><span style="background:#8d6e63"></span> Biomasa</div>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <script>
+    // ----------------------------
+    // CONFIG - Cambia tu API key abajo en la carga del script (al final)
+    // ----------------------------
+
+    let map;
+    const layers = {
+      hydro: new google.maps.Data(),
+      solar: new google.maps.Data(),
+      wind: new google.maps.Data(),
+      nuclear: new google.maps.Data(),
+      biomass: new google.maps.Data()
+    };
+
+    // Estilos por capa (se usan para puntos y polígono si añadís)
+    const styleByType = {
+      hydro: { icon: makeCircle(12, '#1e88e5'), stroke: '#1e88e5' },
+      solar: { icon: makeCircle(12, '#fbc02d'), stroke: '#fbc02d' },
+      wind: { icon: makeCircle(12, '#66bb6a'), stroke: '#66bb6a' },
+      nuclear: { icon: makeCircle(12, '#ef5350'), stroke: '#ef5350' },
+      biomass: { icon: makeCircle(12, '#8d6e63'), stroke: '#8d6e63' }
+    };
+
+    function makeCircle(size, color){
+      // marcador circular SVG inline (data URL)
+      const svg = encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><circle cx="${size/2}" cy="${size/2}" r="${size/2 - 1}" fill="${color}" stroke="white" stroke-width="1"/></svg>`
+      );
+      return `data:image/svg+xml;charset=UTF-8,${svg}`;
+    }
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById('map'), {
+        center: { lat: -38.4161, lng: -63.6167 }, // centro aproximado de Argentina
+        zoom: 4,
+        mapTypeId: 'terrain'
+      });
+
+      // --- EJEMPLO: marcadores representativos (fuentes públicas) ---
+      // Hidroeléctricas (ejemplos)
+      const hydroPoints = [
+        { name: 'Yacyretá (represa)', coord: { lat: -27.48278, lng: -56.72500 }, source: 'GlobalEnergy/ Wikipedia' },
+        { name: 'Salto Grande (represa)', coord: { lat: -31.27472, lng: -57.93833 }, source: 'Wikipedia' }
+      ];
+      // Solar
+      const solarPoints = [
+        { name: 'Cauchari (parque solar, Jujuy)', coord: { lat: -24.0950, lng: -66.7237 }, source: 'Wikipedia / GEM' }
+      ];
+      // Eólica
+      const windPoints = [
+        { name: 'Parque Eólico Rawson (Chubut)', coord: { lat: -43.35142, lng: -65.18797 }, source: 'TheWindPower / GEM' }
+      ];
+      // Nuclear
+      const nuclearPoints = [
+        { name: 'Atucha (Complejo Nuclear, Zárate)', coord: { lat: -33.9675, lng: -59.20489 }, source: 'Mapcarta / GEM' },
+        { name: 'Embalse (Córdoba)', coord: { lat: -32.1800, lng: -64.4181 }, source: 'Wikipedia' }
+      ];
+      // Biomasa / Biogás (ejemplo)
+      const biomassPoints = [
+        { name: 'Planta Biogás Río Cuarto (Córdoba) - ejemplo', coord: { lat: -33.13044, lng: -64.35272 }, source: 'KRIEG & FISCHER / geodatOS' }
+      ];
+
+      // Añadir puntos como GeoJSON para cada capa
+      addPointsToLayer('hydro', hydroPoints);
+      addPointsToLayer('solar', solarPoints);
+      addPointsToLayer('wind', windPoints);
+      addPointsToLayer('nuclear', nuclearPoints);
+      addPointsToLayer('biomass', biomassPoints);
+
+      // Aplicar estilo por capa
+      Object.keys(layers).forEach(key => {
+        const layer = layers[key];
+        layer.setStyle(feature => {
+          const icon = styleByType[key].icon;
+          const stroke = styleByType[key].stroke;
+          return {
+            icon: { url: icon, scaledSize: new google.maps.Size(28,28) },
+            strokeColor: stroke,
+            strokeWeight: 2,
+            visible: true
+          };
+        });
+        layer.setMap(map); // mostrar por defecto (controlado luego por checkboxes)
+      });
+
+      // InfoWindow simple al clicar
+      const infow = new google.maps.InfoWindow();
+      Object.values(layers).forEach(layer => {
+        layer.addListener('click', ev => {
+          const props = ev.feature.getProperty('name') || 'Instalación';
+          const source = ev.feature.getProperty('source') || '';
+          infow.setContent(`<strong>${props}</strong><div style="font-size:12px;color:#555;margin-top:6px;">${source}</div>`);
+          infow.setPosition(ev.latLng);
+          infow.open(map);
+        });
+      });
+
+      // Control de checkboxes
+      document.getElementById('chkHydro').addEventListener('change', e => toggleLayer('hydro', e.target.checked));
+      document.getElementById('chkSolar').addEventListener('change', e => toggleLayer('solar', e.target.checked));
+      document.getElementById('chkWind').addEventListener('change', e => toggleLayer('wind', e.target.checked));
+      document.getElementById('chkNuclear').addEventListener('change', e => toggleLayer('nuclear', e.target.checked));
+      document.getElementById('chkBiomass').addEventListener('change', e => toggleLayer('biomass', e.target.checked));
+
+      document.getElementById('fitBtn').addEventListener('click', fitToArgentina);
+      document.getElementById('exportBtn').addEventListener('click', exportVisibleGeoJSON);
+
+      // Ajuste inicial a Argentina
+      fitToArgentina();
+    }
+
+    function addPointsToLayer(layerKey, points){
+      const layer = layers[layerKey];
+      points.forEach(p => {
+        const feat = new google.maps.Data.Feature({
+          geometry: new google.maps.Data.Point(new google.maps.LatLng(p.coord.lat, p.coord.lng))
+        });
+        feat.setProperty('name', p.name);
+        feat.setProperty('source', p.source || '');
+        layer.add(feat);
+      });
+    }
+
+    function toggleLayer(key, visible){
+      layers[key].setStyle(feature => {
+        return { visible: visible, icon: { url: styleByType[key].icon, scaledSize: new google.maps.Size(28,28) } };
+      });
+    }
+
+    function fitToArgentina(){
+      // Bounding box aproximado para Argentina continental
+      const bounds = new google.maps.LatLngBounds(
+        { lat: -55.0, lng: -73.8 }, // sur-oeste
+        { lat: -21.0, lng: -53.0 }  // norte-este
+      );
+      map.fitBounds(bounds);
+    }
+
+    function exportVisibleGeoJSON(){
+      // Recolecta features visibles en todas las capas y los exporta como GeoJSON descargable
+      const allFeatures = [];
+      Object.keys(layers).forEach(key => {
+        const layer = layers[key];
+        // Iterar features
+        layer.forEach(feature => {
+          // Comprobar si visible según estilo actual
+          // (aquí simplificamos y asumimos que si checkbox está checked exportamos esa capa)
+          const checkboxId = {
+            hydro: 'chkHydro',
+            solar: 'chkSolar',
+            wind: 'chkWind',
+            nuclear: 'chkNuclear',
+            biomass: 'chkBiomass'
+          }[key];
+          const checked = document.getElementById(checkboxId).checked;
+          if (!checked) return;
+          const geom = feature.getGeometry();
+          // sólo puntos en este ejemplo
+          if (geom.getType && geom.getType() === 'Point') {
+            const coord = geom.get();
+            allFeatures.push({
+              type: "Feature",
+              properties: { layer: key, name: feature.getProperty('name'), source: feature.getProperty('source') },
+              geometry: { type: "Point", coordinates: [coord.lng(), coord.lat()] }
+            });
+          }
+        });
+      });
+      const geojson = { type: "FeatureCollection", features: allFeatures };
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(geojson, null, 2));
+      const a = document.createElement('a');
+      a.href = dataStr;
+      a.download = 'capas_energeticas_visible.geojson';
+      a.click();
+    }
+
+    // Cargar Google Maps script dinámicamente y ejecutar initMap cuando esté listo.
+    // Reemplaza YOUR_GOOGLE_MAPS_API_KEY por tu API key.
+    function loadGoogleMapsScript(){
+      const script = document.createElement('script');
+      script.src = "https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap";
+      script.defer = true;
+      script.async = true;
+      document.head.appendChild(script);
+    }
+
+    // Inyectar la función initMap en el scope global antes de cargar el script
+    window.initMap = initMap;
+    loadGoogleMapsScript();
+  </script>
+</body>
+</html>
 
