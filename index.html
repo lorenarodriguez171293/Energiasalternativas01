@@ -1,106 +1,159 @@
-<!-- ==========================================================
-     MODELOS DE AEROGENERADORES
-     ========================================================== -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Energía Eólica</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #007bff;
+            text-align: center;
+        }
+        h2 {
+            color: #28a745;
+            border-bottom: 2px solid #28a745;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+        label, input, button {
+            display: block;
+            margin-bottom: 10px;
+        }
+        input[type="number"] {
+            padding: 8px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #resultado {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-left: 5px solid #28a745;
+            border-radius: 4px;
+        }
+        #descripcion-arg {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff3cd;
+            border-left: 5px solid #ffc107;
+            border-radius: 4px;
+        }
+        /* Imagen de una turbina eólica */
+        .diagram {
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
 
-<h2>🔧 Selección de Modelo de Aerogenerador</h2>
+    <div class="container">
+        <h1>Simulador de Potencia Eólica</h1>
 
-<div class="card">
+        <div class="diagram">
+             
 
-  <h3>Elegí el modelo:</h3>
+[Image of a wind turbine generating electricity]
 
-  <label><input type="radio" name="modelo" id="m1" checked> Vestas V100 – 2 MW</label><br>
-  <label><input type="radio" name="modelo" id="m2"> Nordex N149 – 4.5 MW</label><br>
-  <label><input type="radio" name="modelo" id="m3"> GE 3.8-130 – 3.8 MW</label>
+        </div>
 
-</div>
+        <h2>Simulación de Potencia</h2>
+        <p>Introduce la velocidad del viento (en m/s) para calcular la potencia teórica generada por un aerogenerador genérico.</p>
 
-<!-- ==========================================================
-     SIMULADOR DE VELOCIDAD + MODELO (SIN JAVASCRIPT)
-     ========================================================== -->
+        <label for="velocidadViento">Velocidad del Viento (m/s):</label>
+        <input type="number" id="velocidadViento" value="10" min="0" step="0.1">
 
-<div class="card">
+        <button onclick="calcularPotencia()">Calcular Potencia</button>
 
-  <h3>🌬 Seleccioná la velocidad del viento:</h3>
+        <div id="resultado">
+            </div>
 
-  <label><input type="radio" name="velocidad" id="v1" checked> Bajo (10 km/h)</label><br>
-  <label><input type="radio" name="velocidad" id="v2"> Medio (30 km/h)</label><br>
-  <label><input type="radio" name="velocidad" id="v3"> Alto (60 km/h)</label>
+        <h2>🇦🇷 Desarrollo de la Energía Eólica en Argentina</h2>
+        <div id="descripcion-arg">
+            <p>El desarrollo de la energía eólica en **Argentina** ha experimentado un crecimiento significativo en los últimos años, impulsado por leyes de Fomento a las Energías Renovables (como la Ley 27.191) y programas como **RenovAr**.</p>
+            <p>El país posee un recurso eólico excepcional, especialmente en la región de la **Patagonia** (provincias como Chubut, Santa Cruz y Buenos Aires), donde la velocidad del viento es alta y constante.</p>
+            <p>La energía eólica es actualmente una de las principales fuentes de energía renovable en la matriz energética argentina, contribuyendo a la diversificación y a la meta de alcanzar un porcentaje específico de consumo eléctrico a partir de fuentes renovables.</p>
+        </div>
+    </div>
 
-  <br><br>
+    <script>
+        function calcularPotencia() {
+            // Obtener la velocidad del viento ingresada por el usuario
+            const V = parseFloat(document.getElementById('velocidadViento').value);
+            const resultadoDiv = document.getElementById('resultado');
 
-  <!-- Turbina animada -->
-  <div class="turbine-block">
-    <svg class="turbine sim-turbine" viewBox="0 0 200 200">
-      <rect x="95" y="80" width="10" height="100" fill="#888" />
-      <g class="blade blade-sim">
-        <polygon points="100,20 110,80 90,80" fill="#cfcfcf"/>
-        <polygon points="150,100 110,90 110,110" fill="#cfcfcf"/>
-        <polygon points="100,180 110,120 90,120" fill="#cfcfcf"/>
-        <circle cx="100" cy="100" r="10" fill="#666"/>
-      </g>
-    </svg>
-  </div>
+            // La fórmula de la potencia teórica del viento (Ley de Betz) es:
+            // P = 0.5 * rho * A * V^3 * Cp
+            // Donde:
+            // P = Potencia (vatios)
+            // rho = Densidad del aire (aprox. 1.225 kg/m³ a nivel del mar)
+            // A = Área barrida por las palas (m²)
+            // V = Velocidad del viento (m/s)
+            // Cp = Coeficiente de potencia (máximo teórico 0.593)
 
-  <h3>🔋 Energía generada:</h3>
+            // Para simplificar el simulador, usaremos una turbina "genérica" con valores fijos:
+            const rho = 1.225; // Densidad del aire (kg/m³)
+            const radioPala = 40; // Radio de la pala de una turbina grande (m)
+            const areaBarrida = Math.PI * Math.pow(radioPala, 2); // Área (m²)
+            const Cp = 0.45; // Coeficiente de potencia típico de una turbina real
 
-  <div class="energia-modelo">
+            if (isNaN(V) || V < 0) {
+                resultadoDiv.innerHTML = '<p style="color: red;">⚠️ Por favor, introduce una velocidad del viento válida.</p>';
+                return;
+            }
 
-    <!-- Vestas V100 (2 MW) -->
-    <span class="m1v1">≈ 0,4 MW</span>
-    <span class="m1v2">≈ 1,4 MW</span>
-    <span class="m1v3">≈ 2,0 MW</span>
+            // Aplicar la fórmula:
+            let potenciaTeorica = 0.5 * rho * areaBarrida * Math.pow(V, 3) * Cp; // Potencia en Vatios
 
-    <!-- Nordex N149 (4,5 MW) -->
-    <span class="m2v1">≈ 0,8 MW</span>
-    <span class="m2v2">≈ 2,8 MW</span>
-    <span class="m2v3">≈ 4,5 MW</span>
+            // Convertir la potencia a Kilovatios (kW)
+            const potenciakW = potenciaTeorica / 1000;
 
-    <!-- GE 3.8-130 (3.8 MW) -->
-    <span class="m3v1">≈ 0,7 MW</span>
-    <span class="m3v2">≈ 2,3 MW</span>
-    <span class="m3v3">≈ 3,8 MW</span>
+            // Mostrar el resultado
+            if (V < 3) {
+                resultadoDiv.innerHTML = `<p><strong>Velocidad del Viento:</strong> ${V.toFixed(1)} m/s</p>
+                                          <p><strong>Potencia Producida:</strong> ${potenciakW.toFixed(2)} kW</p>
+                                          <p style="color: orange;">La potencia es baja. La mayoría de las turbinas inician la operación (cut-in speed) entre 3 y 4 m/s.</p>`;
+            } else if (V >= 25) {
+                 resultadoDiv.innerHTML = `<p><strong>Velocidad del Viento:</strong> ${V.toFixed(1)} m/s</p>
+                                          <p><strong>Potencia Producida:</strong> ${potenciakW.toFixed(2)} kW</p>
+                                          <p style="color: red;">La potencia es muy alta. A partir de ~25 m/s (cut-out speed), la turbina se detendría por seguridad.</p>`;
+            } else {
+                resultadoDiv.innerHTML = `<p><strong>Velocidad del Viento:</strong> ${V.toFixed(1)} m/s</p>
+                                          <p><strong>Potencia Producida:</strong> <strong>${potenciakW.toFixed(2)} kW</strong></p>
+                                          <p>La potencia es generada eficientemente.</p>`;
+            }
+        }
 
-  </div>
-
-</div>
-
-
-<style>
-
-/* Ocultar todos los valores */
-.energia-modelo span { 
-  display: none; 
-  font-size: 24px; 
-  font-weight: bold; 
-}
-
-/* Combinaciones modelo + viento */
-
-/* --- VESTAS V100 --- */
-#m1:checked ~ .card ~ .card .energia-modelo .m1v1 { display:inline; }
-#m1:checked ~ .card ~ .card #v1:checked ~ .turbine-block + h3 + .energia-modelo .m1v1 { display:inline; }
-
-#m1:checked ~ .card ~ .card .energia-modelo .m1v2 { display:none; }
-#v2:checked ~ .turbine-block + h3 + .energia-modelo .m1v2 { display:inline; }
-
-#m1:checked ~ .card ~ .card .energia-modelo .m1v3 { display:none; }
-#v3:checked ~ .turbine-block + h3 + .energia-modelo .m1v3 { display:inline; }
-
-/* --- NORDEX N149 --- */
-#m2:checked ~ .card ~ .card #v1:checked ~ .turbine-block + h3 + .energia-modelo .m2v1 { display:inline; }
-#m2:checked ~ .card ~ .card #v2:checked ~ .turbine-block + h3 + .energia-modelo .m2v2 { display:inline; }
-#m2:checked ~ .card ~ .card #v3:checked ~ .turbine-block + h3 + .energia-modelo .m2v3 { display:inline; }
-
-/* --- GE 3.8-130 --- */
-#m3:checked ~ .card ~ .card #v1:checked ~ .turbine-block + h3 + .energia-modelo .m3v1 { display:inline; }
-#m3:checked ~ .card ~ .card #v2:checked ~ .turbine-block + h3 + .energia-modelo .m3v2 { display:inline; }
-#m3:checked ~ .card ~ .card #v3:checked ~ .turbine-block + h3 + .energia-modelo .m3v3 { display:inline; }
-
-/* Turbina velocidad */
-.blade-sim { animation: spin 6s linear infinite; }
-
-#v1:checked ~ .turbine-block .blade-sim { animation-duration: 6s; }
-#v2:checked ~ .turbine-block .blade-sim { animation-duration: 3s; }
-#v3:checked ~ .turbine-block .blade-sim { animation-duration: 1.5s; }
-
-</style>
+        // Ejecutar el cálculo inicial al cargar
+        document.addEventListener('DOMContentLoaded', calcularPotencia);
+    </script>
+</body>
+</html>
