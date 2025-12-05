@@ -1,244 +1,263 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <title>Mapa energético — Argentina</title>
-  <meta name="viewport" content="initial-scale=1.0, width=device-width" />
-  <style>
-    body, html { height: 100%; margin: 0; font-family: Arial, sans-serif; background:#f6f8fb; }
-    #map { height: 90vh; width: 100%; }
-    #controls {
-      padding: 10px;
-      background: white;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 5;
-      border-radius: 8px;
-      max-width: 320px;
-    }
-    #controls h3 { margin: 0 0 6px 0; font-size: 16px; }
-    .layer-row { margin: 6px 0; display:flex; align-items:center; gap:8px; }
-    .legend { font-size: 13px; margin-top:8px; }
-    .legend span { display:inline-block; width:12px; height:12px; margin-right:6px; vertical-align:middle; }
-    button { background:#1976d2;color:white;border:none;padding:6px 10px;border-radius:6px;cursor:pointer; }
-    button:active{transform:translateY(1px)}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Simulador Eólico — Argentina</title>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-sA+e2qkX0p3pQnE6b0ZZyQpM0y+3E2zYk5fXr3jR0+M=" crossorigin=""/>
+
+<style>
+  body { margin:0; font-family: Arial, sans-serif; background:#f2f6fb; color:#111; }
+  #app { display:flex; height:100vh; }
+  #map { flex:1; }
+  #side {
+    width:360px;
+    background:linear-gradient(#ffffff, #e9f2ff);
+    border-left:1px solid #d0e0ff;
+    padding:16px;
+    box-sizing:border-box;
+    overflow:auto;
+  }
+  h1 { font-size:18px; margin:0 0 8px 0; }
+  p.small { font-size:13px; color:#444; margin-top:4px; }
+  .site {
+    padding:10px;
+    margin-bottom:10px;
+    border-radius:8px;
+    background:rgba(255,255,255,0.9);
+    box-shadow:0 1px 3px rgba(0,0,0,0.05);
+    border:1px solid rgba(0,0,0,0.04);
+  }
+  .site h3 { margin:0 0 6px 0; font-size:15px; }
+  .metric { font-weight:700; }
+  .controls { margin-top:12px; display:flex; gap:8px; }
+  button { padding:8px 10px; border-radius:6px; border:none; cursor:pointer; background:#1e88e5; color:white; }
+  button.secondary { background:#6c757d; }
+  footer.small { font-size:12px; color:#666; margin-top:12px; }
+  /* SVG turbine styles */
+  .turbine-svg { width:140px; height:140px; display:block; margin:6px 0; }
+  .blade { transform-origin: 70px 70px; animation: spin 4s linear infinite; }
+  @keyframes spin { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
+  /* dynamic speed via inline style -- updated by JS */
+  .loading { color:#1e88e5; font-weight:600; }
+  .credits { font-size:12px; color:#666; margin-top:14px; }
+</style>
 </head>
 <body>
-  <div id="controls">
-    <h3>Capas energéticas</h3>
-    <div class="layer-row"><input id="chkHydro" type="checkbox" checked /> <label for="chkHydro">Hidroeléctrica</label></div>
-    <div class="layer-row"><input id="chkSolar" type="checkbox" checked /> <label for="chkSolar">Fotovoltaica</label></div>
-    <div class="layer-row"><input id="chkWind" type="checkbox" checked /> <label for="chkWind">Eólica</label></div>
-    <div class="layer-row"><input id="chkNuclear" type="checkbox" checked /> <label for="chkNuclear">Nuclear</label></div>
-    <div class="layer-row"><input id="chkBiomass" type="checkbox" checked /> <label for="chkBiomass">Biomasa / Biogás</label></div>
-    <div style="margin-top:8px;">
-      <button id="fitBtn">Ajustar vista a Argentina</button>
-      <button id="exportBtn">Exportar GeoJSON (capas visibles)</button>
-    </div>
-    <div class="legend">
-      <div><span style="background:#1e88e5"></span> Hidro</div>
-      <div><span style="background:#fbc02d"></span> Solar</div>
-      <div><span style="background:#66bb6a"></span> Eólica</div>
-      <div><span style="background:#ef5350"></span> Nuclear</div>
-      <div><span style="background:#8d6e63"></span> Biomasa</div>
-    </div>
-  </div>
-
+<div id="app">
   <div id="map"></div>
 
-  <script>
-    // ----------------------------
-    // CONFIG - Cambia tu API key abajo en la carga del script (al final)
-    // ----------------------------
+  <aside id="side">
+    <h1>Simulador Eólico — Argentina</h1>
+    <p class="small">Datos en tiempo real (API Open-Meteo). Haz click en un marcador para ver la animación y las métricas.</p>
 
-    let map;
-    const layers = {
-      hydro: new google.maps.Data(),
-      solar: new google.maps.Data(),
-      wind: new google.maps.Data(),
-      nuclear: new google.maps.Data(),
-      biomass: new google.maps.Data()
-    };
+    <div id="sitesList"></div>
 
-    // Estilos por capa (se usan para puntos y polígono si añadís)
-    const styleByType = {
-      hydro: { icon: makeCircle(12, '#1e88e5'), stroke: '#1e88e5' },
-      solar: { icon: makeCircle(12, '#fbc02d'), stroke: '#fbc02d' },
-      wind: { icon: makeCircle(12, '#66bb6a'), stroke: '#66bb6a' },
-      nuclear: { icon: makeCircle(12, '#ef5350'), stroke: '#ef5350' },
-      biomass: { icon: makeCircle(12, '#8d6e63'), stroke: '#8d6e63' }
-    };
+    <div class="controls">
+      <button id="updateAll">Actualizar todo</button>
+      <button class="secondary" id="centerAR">Centrar Argentina</button>
+    </div>
 
-    function makeCircle(size, color){
-      // marcador circular SVG inline (data URL)
-      const svg = encodeURIComponent(
-        `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><circle cx="${size/2}" cy="${size/2}" r="${size/2 - 1}" fill="${color}" stroke="white" stroke-width="1"/></svg>`
-      );
-      return `data:image/svg+xml;charset=UTF-8,${svg}`;
+    <div class="credits">
+      Fuentes de datos: Open-Meteo (viento actual), Global Wind Atlas (mapas de recurso) y reportes públicos sobre parques eólicos en Argentina. Los cálculos de potencia son estimativos. 
+    </div>
+  </aside>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+ integrity="sha256-o9N1j8k0v3pbt0kC2fZtA8wqV7+2w2Q2M6bW3wXkPRA=" crossorigin=""></script>
+
+<script>
+/* -----------------------
+   Configuración inicial
+   ----------------------- */
+const sites = [
+  { id: 'rawson', name: 'Rawson (Chubut)', lat: -43.3000, lon: -65.1000, note:'Centro eólico Patagonia' },
+  { id: 'puerto_madryn', name: 'Puerto Madryn', lat: -42.7696, lon: -65.0384, note:'Parques cercanos' },
+  { id: 'loma_blanca', name: 'Loma Blanca', lat: -45.2000, lon: -69.0000, note:'Loma Blanca (Chubut)' },
+  { id: 'bahia_blanca', name: 'Bahía Blanca', lat: -38.7196, lon: -62.2720, note:'Buenos Aires / litoral' },
+  { id: 'comodoro', name: 'Comodoro Rivadavia', lat: -45.8667, lon: -67.4999, note:'Nodo eólico' },
+  { id: 'ushuaia', name: 'Ushuaia', lat: -54.8019, lon: -68.3030, note:'Sur extremo (ejemplo)' }
+];
+
+/* Parámetros para estimaciones */
+const hubHeight = 100; // m (altura típica de buje)
+const refHeight = 10;  // m (medida de current_weather)
+const alpha = 0.14;    // exponente de Hellmann típico
+const airDensity = 1.225; // kg/m3
+const rotorDiameter = 120; // m (ejemplo)
+const cp = 0.40; // coeficiente de potencia aproximado (teórico max ~0.59 Betz)
+const sweptArea = Math.PI * (rotorDiameter/2)**2;
+
+/* Inicializar mapa */
+const map = L.map('map').setView([-38.4, -63.6], 4); // centra Argentina
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 18, attribution: '© OpenStreetMap'
+}).addTo(map);
+
+const markers = {};
+
+/* Crea marcador y popup con animación SVG */
+function createTurbineSVG(id) {
+  // SVG with three blades centered at 70,70
+  return `
+    <div style="text-align:center;">
+      <svg class="turbine-svg" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
+        <g id="hub-${id}">
+          <circle cx="70" cy="70" r="8" fill="#666"></circle>
+          <g class="blade" id="blade1-${id}">
+            <path d="M70 70 L120 72 Q115 66 120 60 L70 70" fill="#bdbdbd" opacity="0.95"></path>
+          </g>
+          <g class="blade" id="blade2-${id}" transform="rotate(120 70 70)">
+            <path d="M70 70 L120 72 Q115 66 120 60 L70 70" fill="#d6d6d6" opacity="0.95"></path>
+          </g>
+          <g class="blade" id="blade3-${id}" transform="rotate(240 70 70)">
+            <path d="M70 70 L120 72 Q115 66 120 60 L70 70" fill="#e9e9e9" opacity="0.95"></path>
+          </g>
+        </g>
+      </svg>
+    </div>`;
+}
+
+/* Cálculo estimado de potencia (W) a partir de velocidad en m/s */
+function computePowerFromWind(v_hub) {
+  const P = 0.5 * airDensity * sweptArea * cp * (v_hub**3); // W
+  return P; 
+}
+
+/* Actualiza velocidad de giro de la animación según velocidad */
+function updateTurbineSpeed(id, v_hub) {
+  // Queremos que la animación sea más rápida con mayor viento.
+  // Ajuste: periodo (s) = k / v_hub  (evitar división por 0)
+  const minPeriod = 0.4; // s (máxima rapidez visual)
+  const maxPeriod = 6;   // s (muy lento)
+  const k = 2.0; // constante para escalar (ajustable para mejor look)
+  let period = v_hub > 0.1 ? Math.max(minPeriod, Math.min(maxPeriod, k / v_hub)) : maxPeriod;
+  // Aplica animación con CSS inline a las blades del popup/DOM
+  ['blade1-'+id,'blade2-'+id,'blade3-'+id].forEach(bid => {
+    const el = document.getElementById(bid);
+    if (el) {
+      el.style.animationDuration = period + 's';
+      el.style.animationTimingFunction = 'linear';
+      el.style.animationIterationCount = 'infinite';
     }
+  });
+}
 
-    function initMap() {
-      map = new google.maps.Map(document.getElementById('map'), {
-        center: { lat: -38.4161, lng: -63.6167 }, // centro aproximado de Argentina
-        zoom: 4,
-        mapTypeId: 'terrain'
-      });
+/* Llama a Open-Meteo para el lugar indicado y devuelve un objeto con viento (m/s) y dirección (deg) */
+async function fetchWindFor(lat, lon) {
+  // Usamos current_weather (viento a 10 m). Para estimar en altura de buje aplicamos ley de potencia.
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`;
+  try {
+    const res = await fetch(url);
+    const json = await res.json();
+    if (!json.current_weather) throw new Error('sin current_weather');
+    const v10 = json.current_weather.windspeed; // m/s (open-meteo entrega m/s)
+    const dir = json.current_weather.winddirection;
+    // Ajuste perfil vertical (Ley de Hellmann)
+    const vhub = v10 * Math.pow(hubHeight / refHeight, alpha);
+    return { v10, vhub, dir, ts: json.current_weather.time };
+  } catch (e) {
+    console.warn('error meteofetch', e);
+    return null;
+  }
+}
 
-      // --- EJEMPLO: marcadores representativos (fuentes públicas) ---
-      // Hidroeléctricas (ejemplos)
-      const hydroPoints = [
-        { name: 'Yacyretá (represa)', coord: { lat: -27.48278, lng: -56.72500 }, source: 'GlobalEnergy/ Wikipedia' },
-        { name: 'Salto Grande (represa)', coord: { lat: -31.27472, lng: -57.93833 }, source: 'Wikipedia' }
-      ];
-      // Solar
-      const solarPoints = [
-        { name: 'Cauchari (parque solar, Jujuy)', coord: { lat: -24.0950, lng: -66.7237 }, source: 'Wikipedia / GEM' }
-      ];
-      // Eólica
-      const windPoints = [
-        { name: 'Parque Eólico Rawson (Chubut)', coord: { lat: -43.35142, lng: -65.18797 }, source: 'TheWindPower / GEM' }
-      ];
-      // Nuclear
-      const nuclearPoints = [
-        { name: 'Atucha (Complejo Nuclear, Zárate)', coord: { lat: -33.9675, lng: -59.20489 }, source: 'Mapcarta / GEM' },
-        { name: 'Embalse (Córdoba)', coord: { lat: -32.1800, lng: -64.4181 }, source: 'Wikipedia' }
-      ];
-      // Biomasa / Biogás (ejemplo)
-      const biomassPoints = [
-        { name: 'Planta Biogás Río Cuarto (Córdoba) - ejemplo', coord: { lat: -33.13044, lng: -64.35272 }, source: 'KRIEG & FISCHER / geodatOS' }
-      ];
+/* Crea marcadores y el panel lateral */
+function setupSites() {
+  const list = document.getElementById('sitesList');
+  list.innerHTML = '';
+  sites.forEach(site => {
+    const marker = L.marker([site.lat, site.lon]).addTo(map);
+    markers[site.id] = marker;
 
-      // Añadir puntos como GeoJSON para cada capa
-      addPointsToLayer('hydro', hydroPoints);
-      addPointsToLayer('solar', solarPoints);
-      addPointsToLayer('wind', windPoints);
-      addPointsToLayer('nuclear', nuclearPoints);
-      addPointsToLayer('biomass', biomassPoints);
+    const siteDiv = document.createElement('div');
+    siteDiv.className = 'site';
+    siteDiv.id = 'site-'+site.id;
+    siteDiv.innerHTML = `
+      <h3>${site.name}</h3>
+      <div class="small">${site.note || ''}</div>
+      <div>Viento 10m: <span id="v10-${site.id}" class="metric loading">—</span> m/s</div>
+      <div>Viento ≈${hubHeight}m: <span id="vhub-${site.id}" class="metric loading">—</span> m/s</div>
+      <div>Potencia estimada por turbina: <span id="pwr-${site.id}" class="metric loading">—</span> kW</div>
+      <div class="small">Última lectura: <span id="ts-${site.id}">—</span></div>
+      <div id="svg-${site.id}">${createTurbineSVG(site.id)}</div>
+    `;
+    list.appendChild(siteDiv);
 
-      // Aplicar estilo por capa
-      Object.keys(layers).forEach(key => {
-        const layer = layers[key];
-        layer.setStyle(feature => {
-          const icon = styleByType[key].icon;
-          const stroke = styleByType[key].stroke;
-          return {
-            icon: { url: icon, scaledSize: new google.maps.Size(28,28) },
-            strokeColor: stroke,
-            strokeWeight: 2,
-            visible: true
-          };
-        });
-        layer.setMap(map); // mostrar por defecto (controlado luego por checkboxes)
-      });
+    // popup con la animación también
+    marker.bindPopup(`<strong>${site.name}</strong><br>${site.note || ''}<br>` + createTurbineSVG(site.id), { maxWidth:250 });
 
-      // InfoWindow simple al clicar
-      const infow = new google.maps.InfoWindow();
-      Object.values(layers).forEach(layer => {
-        layer.addListener('click', ev => {
-          const props = ev.feature.getProperty('name') || 'Instalación';
-          const source = ev.feature.getProperty('source') || '';
-          infow.setContent(`<strong>${props}</strong><div style="font-size:12px;color:#555;margin-top:6px;">${source}</div>`);
-          infow.setPosition(ev.latLng);
-          infow.open(map);
-        });
-      });
+    // click en el panel centra el mapa y abre popup
+    siteDiv.addEventListener('click', () => {
+      map.setView([site.lat, site.lon], 9, { animate:true });
+      marker.openPopup();
+    });
+  });
+}
 
-      // Control de checkboxes
-      document.getElementById('chkHydro').addEventListener('change', e => toggleLayer('hydro', e.target.checked));
-      document.getElementById('chkSolar').addEventListener('change', e => toggleLayer('solar', e.target.checked));
-      document.getElementById('chkWind').addEventListener('change', e => toggleLayer('wind', e.target.checked));
-      document.getElementById('chkNuclear').addEventListener('change', e => toggleLayer('nuclear', e.target.checked));
-      document.getElementById('chkBiomass').addEventListener('change', e => toggleLayer('biomass', e.target.checked));
+/* Actualiza todos los sitios */
+async function updateAllSites() {
+  document.getElementById('updateAll').disabled = true;
+  for (const site of sites) {
+    await updateSite(site);
+  }
+  document.getElementById('updateAll').disabled = false;
+}
 
-      document.getElementById('fitBtn').addEventListener('click', fitToArgentina);
-      document.getElementById('exportBtn').addEventListener('click', exportVisibleGeoJSON);
+/* Actualiza un sitio individual */
+async function updateSite(site) {
+  const data = await fetchWindFor(site.lat, site.lon);
+  const v10El = document.getElementById('v10-'+site.id);
+  const vhubEl = document.getElementById('vhub-'+site.id);
+  const pwrEl = document.getElementById('pwr-'+site.id);
+  const tsEl = document.getElementById('ts-'+site.id);
 
-      // Ajuste inicial a Argentina
-      fitToArgentina();
-    }
+  if (!data) {
+    v10El.textContent = 'N/A'; vhubEl.textContent = 'N/A'; pwrEl.textContent = 'N/A'; tsEl.textContent = 'error';
+    return;
+  }
+  const v10 = Number(data.v10);
+  const vhub = Number(data.vhub);
+  const P = computePowerFromWind(vhub); // W
+  const PkW = (P/1000).toFixed(0);
 
-    function addPointsToLayer(layerKey, points){
-      const layer = layers[layerKey];
-      points.forEach(p => {
-        const feat = new google.maps.Data.Feature({
-          geometry: new google.maps.Data.Point(new google.maps.LatLng(p.coord.lat, p.coord.lng))
-        });
-        feat.setProperty('name', p.name);
-        feat.setProperty('source', p.source || '');
-        layer.add(feat);
-      });
-    }
+  v10El.textContent = v10.toFixed(1);
+  vhubEl.textContent = vhub.toFixed(1);
+  pwrEl.textContent = PkW;
+  tsEl.textContent = data.ts || '';
 
-    function toggleLayer(key, visible){
-      layers[key].setStyle(feature => {
-        return { visible: visible, icon: { url: styleByType[key].icon, scaledSize: new google.maps.Size(28,28) } };
-      });
-    }
+  // Actualiza animación (en panel y popup si está abierto)
+  updateTurbineSpeed(site.id, vhub);
 
-    function fitToArgentina(){
-      // Bounding box aproximado para Argentina continental
-      const bounds = new google.maps.LatLngBounds(
-        { lat: -55.0, lng: -73.8 }, // sur-oeste
-        { lat: -21.0, lng: -53.0 }  // norte-este
-      );
-      map.fitBounds(bounds);
-    }
+  // También actualizamos el popup content to show new numbers (simple approach: rebind)
+  const marker = markers[site.id];
+  if (marker) {
+    const popupHTML = `<strong>${site.name}</strong><br>${site.note || ''}<br>
+      Viento 10m: ${v10.toFixed(1)} m/s<br>Viento ≈${hubHeight}m: ${vhub.toFixed(1)} m/s<br>
+      Potencia estimada por turbina: ${PkW} kW
+      ${createTurbineSVG(site.id)}
+    `;
+    marker.setPopupContent(popupHTML);
+  }
+}
 
-    function exportVisibleGeoJSON(){
-      // Recolecta features visibles en todas las capas y los exporta como GeoJSON descargable
-      const allFeatures = [];
-      Object.keys(layers).forEach(key => {
-        const layer = layers[key];
-        // Iterar features
-        layer.forEach(feature => {
-          // Comprobar si visible según estilo actual
-          // (aquí simplificamos y asumimos que si checkbox está checked exportamos esa capa)
-          const checkboxId = {
-            hydro: 'chkHydro',
-            solar: 'chkSolar',
-            wind: 'chkWind',
-            nuclear: 'chkNuclear',
-            biomass: 'chkBiomass'
-          }[key];
-          const checked = document.getElementById(checkboxId).checked;
-          if (!checked) return;
-          const geom = feature.getGeometry();
-          // sólo puntos en este ejemplo
-          if (geom.getType && geom.getType() === 'Point') {
-            const coord = geom.get();
-            allFeatures.push({
-              type: "Feature",
-              properties: { layer: key, name: feature.getProperty('name'), source: feature.getProperty('source') },
-              geometry: { type: "Point", coordinates: [coord.lng(), coord.lat()] }
-            });
-          }
-        });
-      });
-      const geojson = { type: "FeatureCollection", features: allFeatures };
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(geojson, null, 2));
-      const a = document.createElement('a');
-      a.href = dataStr;
-      a.download = 'capas_energeticas_visible.geojson';
-      a.click();
-    }
+/* Inicio */
+setupSites();
+updateAllSites(); // carga inicial
 
-    // Cargar Google Maps script dinámicamente y ejecutar initMap cuando esté listo.
-    // Reemplaza YOUR_GOOGLE_MAPS_API_KEY por tu API key.
-    function loadGoogleMapsScript(){
-      const script = document.createElement('script');
-      script.src = "https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap";
-      script.defer = true;
-      script.async = true;
-      document.head.appendChild(script);
-    }
+/* Botones */
+document.getElementById('updateAll').addEventListener('click', updateAllSites);
+document.getElementById('centerAR').addEventListener('click', () => map.setView([-38.4, -63.6], 4));
 
-    // Inyectar la función initMap en el scope global antes de cargar el script
-    window.initMap = initMap;
-    loadGoogleMapsScript();
-  </script>
+/* Auto actualizado cada 10 minutos (opcional) */
+// setInterval(updateAllSites, 10*60*1000);
+
+</script>
 </body>
 </html>
 
