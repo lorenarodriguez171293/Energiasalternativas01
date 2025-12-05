@@ -3,101 +3,194 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador de Energía Eólica</title>
+    <title>Simulador de Energía Eólica con Animación</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #eef4ff; /* Fondo azul claro */
             color: #333;
         }
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
         h1 {
-            color: #007bff;
+            color: #004d99;
             text-align: center;
+            margin-bottom: 25px;
+            font-weight: 600;
         }
-        h2 {
-            color: #28a745;
-            border-bottom: 2px solid #28a745;
-            padding-bottom: 5px;
-            margin-top: 30px;
+
+        /* --- Estilos de la Turbina Eólica y Animación --- */
+        .turbine-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
         }
-        label, input, button {
-            display: block;
-            margin-bottom: 10px;
+        
+        /* Contenedor de la turbina para mantener la perspectiva */
+        .turbine-visual {
+            position: relative;
+            width: 150px;
+            height: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        input[type="number"] {
-            padding: 8px;
+
+        /* Torre */
+        .tower {
+            width: 20px;
+            height: 200px;
+            background-color: #9cb3bf;
+            border-radius: 5px 5px 0 0;
+            position: absolute;
+            bottom: 0;
+        }
+        
+        /* Góndola (Caja) */
+        .nacelle {
+            width: 40px;
+            height: 30px;
+            background-color: #5d7c9a;
+            border-radius: 4px;
+            position: absolute;
+            top: 170px;
+            z-index: 10;
+        }
+
+        /* Rotor (Donde giran las palas) */
+        .rotor {
+            position: absolute;
+            top: 185px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 10px;
+            height: 10px;
+            background-color: #333;
+            border-radius: 50%;
+            z-index: 15;
+            /* La animación de rotación se aplica aquí */
+            animation-name: spin;
+            animation-iteration-count: infinite;
+            animation-timing-function: linear;
+        }
+
+        /* Palas individuales */
+        .blade {
+            position: absolute;
+            width: 5px;
+            height: 80px;
+            background: #4a5c68;
+            border-radius: 0 5px 5px 0;
+            transform-origin: 0% 50%; /* Punto de giro */
+            left: 5px;
+            top: -35px;
+        }
+
+        /* Posicionamiento de las 3 palas */
+        .rotor .blade:nth-child(1) { transform: rotate(0deg) translate(0, 0); }
+        .rotor .blade:nth-child(2) { transform: rotate(120deg) translate(0, 0); }
+        .rotor .blade:nth-child(3) { transform: rotate(240deg) translate(0, 0); }
+
+        /* Definición de la animación de rotación */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* --- Estilos de Control y Resultados --- */
+        .controls {
+            padding: 20px;
+            background-color: #e9f0f8;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        label {
+            font-weight: bold;
+            color: #004d99;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        input[type="range"] {
             width: 100%;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            margin-top: 5px;
         }
-        button {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #0056b3;
+        #velocidadValor {
+            font-size: 1.2em;
+            color: #28a745;
         }
         #resultado {
             margin-top: 20px;
             padding: 15px;
-            background-color: #e9ecef;
+            background-color: #d4edda;
             border-left: 5px solid #28a745;
             border-radius: 4px;
+            font-size: 1.1em;
         }
-        #descripcion-arg {
-            margin-top: 20px;
-            padding: 15px;
+        
+        /* Estilos de la descripción */
+        .description-arg {
+            margin-top: 30px;
+            padding: 20px;
             background-color: #fff3cd;
             border-left: 5px solid #ffc107;
             border-radius: 4px;
         }
-        /* Imagen de una turbina eólica */
-        .diagram {
-            text-align: center;
-            margin: 20px 0;
+        h2 {
+            color: #004d99;
+            border-bottom: 2px solid #004d99;
+            padding-bottom: 5px;
+            margin-top: 30px;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Simulador de Potencia Eólica</h1>
+        <h1>Simulador Interactivo de Potencia Eólica</h1>
 
-        <div class="diagram">
-             
-
-[Image of a wind turbine generating electricity]
-
-        </div>
-
-        <h2>Simulación de Potencia</h2>
-        <p>Introduce la velocidad del viento (en m/s) para calcular la potencia teórica generada por un aerogenerador genérico.</p>
-
-        <label for="velocidadViento">Velocidad del Viento (m/s):</label>
-        <input type="number" id="velocidadViento" value="10" min="0" step="0.1">
-
-        <button onclick="calcularPotencia()">Calcular Potencia</button>
-
-        <div id="resultado">
+        <div class="turbine-section">
+            
+            <div class="turbine-visual">
+                <div class="tower"></div>
+                <div class="nacelle"></div>
+                <div class="rotor" id="rotor">
+                    <div class="blade"></div>
+                    <div class="blade"></div>
+                    <div class="blade"></div>
+                </div>
             </div>
 
+            <div class="controls">
+                <label for="velocidadViento">
+                    Velocidad del Viento (m/s):
+                    <span id="velocidadValor">10.0</span> m/s
+                </label>
+                <input type="range" id="velocidadViento" min="0" max="25" step="0.1" value="10" 
+                       oninput="actualizarVelocidad(this.value)">
+
+                <div id="resultado">
+                    </div>
+            </div>
+        </div>
+        
+        ---
+
         <h2>🇦🇷 Desarrollo de la Energía Eólica en Argentina</h2>
-        <div id="descripcion-arg">
+        <div class="description-arg">
             <p>El desarrollo de la energía eólica en **Argentina** ha experimentado un crecimiento significativo en los últimos años, impulsado por leyes de Fomento a las Energías Renovables (como la Ley 27.191) y programas como **RenovAr**.</p>
             <p>El país posee un recurso eólico excepcional, especialmente en la región de la **Patagonia** (provincias como Chubut, Santa Cruz y Buenos Aires), donde la velocidad del viento es alta y constante.</p>
             <p>La energía eólica es actualmente una de las principales fuentes de energía renovable en la matriz energética argentina, contribuyendo a la diversificación y a la meta de alcanzar un porcentaje específico de consumo eléctrico a partir de fuentes renovables.</p>
@@ -105,55 +198,89 @@
     </div>
 
     <script>
-        function calcularPotencia() {
-            // Obtener la velocidad del viento ingresada por el usuario
-            const V = parseFloat(document.getElementById('velocidadViento').value);
-            const resultadoDiv = document.getElementById('resultado');
+        const V_MIN = 3.0;  // Velocidad mínima de operación (cut-in speed)
+        const V_MAX = 25.0; // Velocidad máxima de operación (cut-out speed)
 
-            // La fórmula de la potencia teórica del viento (Ley de Betz) es:
-            // P = 0.5 * rho * A * V^3 * Cp
-            // Donde:
-            // P = Potencia (vatios)
-            // rho = Densidad del aire (aprox. 1.225 kg/m³ a nivel del mar)
-            // A = Área barrida por las palas (m²)
-            // V = Velocidad del viento (m/s)
-            // Cp = Coeficiente de potencia (máximo teórico 0.593)
+        // Propiedades de la turbina genérica (igual que en el código anterior)
+        const rho = 1.225; // Densidad del aire (kg/m³)
+        const radioPala = 40; // Radio de la pala de una turbina grande (m)
+        const areaBarrida = Math.PI * Math.pow(radioPala, 2); // Área (m²)
+        const Cp = 0.45; // Coeficiente de potencia típico
 
-            // Para simplificar el simulador, usaremos una turbina "genérica" con valores fijos:
-            const rho = 1.225; // Densidad del aire (kg/m³)
-            const radioPala = 40; // Radio de la pala de una turbina grande (m)
-            const areaBarrida = Math.PI * Math.pow(radioPala, 2); // Área (m²)
-            const Cp = 0.45; // Coeficiente de potencia típico de una turbina real
+        const rotorElement = document.getElementById('rotor');
+        const velocidadValorSpan = document.getElementById('velocidadValor');
+        const resultadoDiv = document.getElementById('resultado');
 
-            if (isNaN(V) || V < 0) {
-                resultadoDiv.innerHTML = '<p style="color: red;">⚠️ Por favor, introduce una velocidad del viento válida.</p>';
+        function calcularPotencia(V) {
+            // Aplicar la fórmula: P = 0.5 * rho * A * V^3 * Cp (en Watios)
+            let potenciaTeorica = 0.5 * rho * areaBarrida * Math.pow(V, 3) * Cp; 
+            const potenciakW = potenciaTeorica / 1000; // a Kilovatios
+
+            // Adaptar la potencia a los límites reales de la turbina
+            let potenciaFinalkW = 0;
+            let mensaje = "";
+
+            if (V < V_MIN) {
+                potenciaFinalkW = 0.00;
+                mensaje = `<p><strong>Potencia Producida:</strong> ${potenciaFinalkW.toFixed(2)} kW</p>
+                           <p style="color: orange; font-size: 0.9em;">Velocidad baja (V < ${V_MIN} m/s). La turbina está detenida o inactiva.</p>`;
+            } else if (V >= V_MIN && V < V_MAX) {
+                potenciaFinalkW = potenciakW;
+                mensaje = `<p><strong>Potencia Producida:</strong> <strong>${potenciaFinalkW.toFixed(2)} kW</strong></p>
+                           <p style="color: green; font-size: 0.9em;">Generación eficiente de energía.</p>`;
+            } else { // V >= V_MAX
+                 // En la realidad, la turbina opera a su potencia nominal máxima (por ejemplo, 3000 kW) o se detiene.
+                 // Aquí simulamos un límite máximo y un aviso de detención.
+                 potenciaFinalkW = 3000.00; // Asumimos una potencia nominal máxima
+                 mensaje = `<p><strong>Potencia Producida:</strong> ${potenciaFinalkW.toFixed(2)} kW</p>
+                            <p style="color: red; font-size: 0.9em;">Velocidad crítica (V > ${V_MAX} m/s). La turbina puede detenerse por seguridad (cut-out).</p>`;
+            }
+
+            resultadoDiv.innerHTML = `<p><strong>Velocidad del Viento:</strong> ${V.toFixed(1)} m/s</p>` + mensaje;
+            
+            // Retorna la potencia final para un posible uso futuro, aunque no se usa aquí
+            return potenciaFinalkW; 
+        }
+
+        function actualizarVelocidad(VString) {
+            const V = parseFloat(VString);
+            velocidadValorSpan.textContent = V.toFixed(1);
+
+            // 1. Calular Potencia
+            calcularPotencia(V);
+            
+            // 2. Controlar la animación de giro
+            
+            // Si la velocidad es 0, la turbina debe detenerse.
+            if (V === 0) {
+                rotorElement.style.animationPlayState = 'paused';
+                rotorElement.style.animationDuration = '0s';
                 return;
             }
 
-            // Aplicar la fórmula:
-            let potenciaTeorica = 0.5 * rho * areaBarrida * Math.pow(V, 3) * Cp; // Potencia en Vatios
+            // Mapear la velocidad del viento (V) a una duración de animación (D)
+            // Una duración más corta (menor D) significa una rotación más rápida.
+            // Usamos un factor inverso. Ejemplo: 
+            // V=1 m/s -> Duración 10s (lento)
+            // V=25 m/s -> Duración 0.1s (rápido)
+            
+            // Fórmula: D = 10 / V (para mapear 1-25 m/s a 10-0.4 segundos)
+            // Agregamos un pequeño offset para evitar división por cero o velocidades extremas
+            const durationFactor = 10;
+            let newDuration = durationFactor / V;
+            
+            // Limitar la velocidad máxima para que no sea absurdamente rápida
+            newDuration = Math.max(0.05, newDuration); // Mínimo 0.05s por rotación
 
-            // Convertir la potencia a Kilovatios (kW)
-            const potenciakW = potenciaTeorica / 1000;
-
-            // Mostrar el resultado
-            if (V < 3) {
-                resultadoDiv.innerHTML = `<p><strong>Velocidad del Viento:</strong> ${V.toFixed(1)} m/s</p>
-                                          <p><strong>Potencia Producida:</strong> ${potenciakW.toFixed(2)} kW</p>
-                                          <p style="color: orange;">La potencia es baja. La mayoría de las turbinas inician la operación (cut-in speed) entre 3 y 4 m/s.</p>`;
-            } else if (V >= 25) {
-                 resultadoDiv.innerHTML = `<p><strong>Velocidad del Viento:</strong> ${V.toFixed(1)} m/s</p>
-                                          <p><strong>Potencia Producida:</strong> ${potenciakW.toFixed(2)} kW</p>
-                                          <p style="color: red;">La potencia es muy alta. A partir de ~25 m/s (cut-out speed), la turbina se detendría por seguridad.</p>`;
-            } else {
-                resultadoDiv.innerHTML = `<p><strong>Velocidad del Viento:</strong> ${V.toFixed(1)} m/s</p>
-                                          <p><strong>Potencia Producida:</strong> <strong>${potenciakW.toFixed(2)} kW</strong></p>
-                                          <p>La potencia es generada eficientemente.</p>`;
-            }
+            rotorElement.style.animationPlayState = 'running';
+            rotorElement.style.animationDuration = `${newDuration}s`;
         }
 
-        // Ejecutar el cálculo inicial al cargar
-        document.addEventListener('DOMContentLoaded', calcularPotencia);
+        // Inicializar el simulador al cargar la página con el valor por defecto
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialV = document.getElementById('velocidadViento').value;
+            actualizarVelocidad(initialV);
+        });
     </script>
 </body>
 </html>
