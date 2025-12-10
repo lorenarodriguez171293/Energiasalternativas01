@@ -126,8 +126,29 @@
                 top: 45px;
                 left: 0;
                 width: 100vw;
-                height: calc(100vh - 45px);
+                height: calc(100vh - 100px);
                 z-index: 5;
+            }
+
+            /* BOTÓN SALIR */
+            #exit-fullscreen {
+                display: none;
+                position: fixed;
+                bottom: 10px;
+                right: 10px;
+                z-index: 50;
+                background: #e74c3c;
+                color: white;
+                padding: 12px 18px;
+                border-radius: 8px;
+                font-size: 1rem;
+                font-weight: bold;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+                border: none;
+            }
+
+            body.fullscreen-mode #exit-fullscreen {
+                display: block;
             }
         }
     </style>
@@ -150,6 +171,9 @@
             <iframe id="simulador-frame" title="Contenido del Dashboard" src="intro.html"></iframe>
         </main>
     </div>
+
+    <!-- BOTÓN SALIR DE PANTALLA COMPLETA -->
+    <button id="exit-fullscreen" onclick="salirPantallaCompleta()">Salir</button>
 
     <script>
         const simuladores = [
@@ -194,7 +218,6 @@
            FUNCIÓN ORIGINAL + MODO FULLSCREEN PARA CELULAR
         ------------------------------------------------- */
 
-        // Mantengo la función original para no romper nada
         const cargarSimuladorOriginal = function(path, event, isHome){
             if (event) event.preventDefault();
 
@@ -209,7 +232,6 @@
             }
         };
 
-        // 🚀 Nueva función extendida con pantalla completa móvil
         window.cargarSimulador = function(path, event, isHome = false) {
             cargarSimuladorOriginal(path, event, isHome);
 
@@ -221,6 +243,13 @@
                 }
             }
         };
+
+        /* --------------------------------------------
+            BOTÓN SALIR DE PANTALLA COMPLETA
+        -------------------------------------------- */
+        function salirPantallaCompleta() {
+            document.body.classList.remove("fullscreen-mode");
+        }
     </script>
 </body>
 </html>
